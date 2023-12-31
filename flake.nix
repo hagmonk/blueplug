@@ -27,7 +27,7 @@
           nativeBuildInputs = with pkgs; [ rustc cargo ];
         };
 
-        nixosModules.default = { config, lib, pkgs, ... }:
+        nixosModule = { config, lib, pkgs, ... }:
         with lib;
         let cfg = config.services.blueplug;
         in {
