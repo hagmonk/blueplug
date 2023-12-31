@@ -22,7 +22,7 @@ use uuid::Uuid;
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "lowercase")]
 pub struct DeviceId {
-    peripheral_id: Uuid,
+    id: String,
     device_name: String,
 }
 
@@ -102,35 +102,31 @@ fn bt_stream() -> impl Stream<Item = Result<DeviceEvent>> {
         let adapters = manager.adapters().await?;
         let central = adapters.into_iter().next().ok_or(eyre!("No BT Adapter"))?;
         let events = central.events().await?;
-        let mut device_names = HashMap::<PeripheralId, DeviceId>::new();
+        let mut device_names = HashMap::<String, DeviceId>::new();
         central.start_scan(ScanFilter::default()).await?;
 
         for await event in events {
             match event {
                 CentralEvent::DeviceDiscovered(id) => {
                     let peripheral = central.peripheral(&id).await?;
+                    let id = id.to_string();
                     if let Some(prop) = peripheral.properties().await? {
                         if let Some(device_name) = prop.local_name {
-                            match Uuid::try_parse_ascii(id.to_string().as_bytes()) {
-                                Ok(peripheral_id) => {
-                                    device_names.insert(id, DeviceId{peripheral_id, device_name});
-                                },
-                                Err(e) => {
-                                    println!("parsing uuid error {:?} {:?}", id.to_string(), e)
-                                }
-                            }
+                            device_names.insert(id.clone(), DeviceId{id, device_name});
                             // let peripheral_id = Uuid::parse_str(id.to_string().as_str()).unwrap_or_default();
 
                         }
                     }
                 }
                  CentralEvent::ServiceDataAdvertisement { id, service_data } => {
+                    let id = id.to_string();
                      if let Some(device_id) = device_names.get(&id) {
                         let device_id = device_id.clone();
                         yield DeviceEvent::ServiceDataAdvertisement {device_id, service_data };
                     }
                 }
                 CentralEvent::ManufacturerDataAdvertisement { id, manufacturer_data } => {
+                    let id = id.to_string();
                      if let Some(device_id) = device_names.get(&id) {
                         let device_id = device_id.clone();
                         yield DeviceEvent::ManufacturerDataAdvertisement {device_id, manufacturer_data };
@@ -222,10 +218,11 @@ fn measurements_from_service_data(service_data: HashMap<Uuid, Vec<u8>>) -> Vec<M
 
 #[derive(Parser, Debug)]
 struct Args {
+    #[arg(short = 'i', long)]
     client_id: String,
-    #[arg(default_value = "starscourge.local")]
-    mqtt_host: String,
-    #[arg(default_value_t = 1883)]
+    #[arg(short = 'a', long)]
+    mqtt_addr: String,
+    #[arg(short = 'p', long, default_value_t = 1883)]
     mqtt_port: u16,
 }
 
@@ -233,7 +230,7 @@ struct Args {
 async fn main() -> Result<()> {
     let args = Args::parse();
 
-    let mut mqttoptions = MqttOptions::new(args.client_id, args.mqtt_host, args.mqtt_port);
+    let mut mqttoptions = MqttOptions::new(args.client_id, args.mqtt_addr, args.mqtt_port);
     mqttoptions.set_keep_alive(Duration::from_secs(5));
 
     let (client, mut eventloop) = AsyncClient::new(mqttoptions, 10);

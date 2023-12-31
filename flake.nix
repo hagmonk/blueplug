@@ -17,6 +17,8 @@
       in rec {
         # For `nix build` & `nix run`:
         defaultPackage = naersk'.buildPackage {
+        nativeBuildInputs = with pkgs; [ pkg-config ];
+        buildInputs = with pkgs; [ openssl dbus ];
           src = ./.;
         };
 
@@ -24,6 +26,48 @@
         devShell = pkgs.mkShell {
           nativeBuildInputs = with pkgs; [ rustc cargo ];
         };
-      }
-    );
+
+
+
+      }) // {
+        nixosModule = { config, lib, pkgs, ... }:
+        with lib;
+        let cfg = config.services.blueplug;
+        in {
+            options.services.blueplug = {
+                enable = mkEnableOption "BTLE Plug";
+
+                client_id = mkOption {
+                    type = types.str;
+                    default = "";
+                    description = "MQTT Client ID";
+                };
+
+                mqtt_address = mkOption {
+                    type = types.str;
+                    default = "";
+                    description = "MQTT Address";
+                };
+
+                mqtt_port = mkOption {
+                    type = types.port;
+                    default = 1883;
+                    description = "MQTT Port";
+                };
+            };
+
+            config = mkIf cfg.enable {
+                systemd.services.btleplug = {
+                    description = "BTLE Plug";
+                    wantedBy = ["multi-user.target"];
+                    serviceConfig = {
+                        ExecStart = "${cfg.package}/bin/btleplug --client_id ${cfg.client_id} --mqtt-addr ${cfg.mqtt_address} --mqtt-port ${toString cfg.mqtt_port}";
+                        ProtectHome = "read-only";
+                        Restart = "on-failure";
+                        Type = "exec";
+                    };
+                };
+            };
+        };
+   };
 }
