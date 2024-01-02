@@ -57,9 +57,8 @@
                 systemd.services.btleplug = {
                     description = "BTLE Plug";
                     wantedBy = ["multi-user.target"];
-                    serviceConfig = let pkg = self.packages."x86_64-linux".default;
-                    in {
-                        ExecStart = "${pkg}/bin/btleplug --client_id ${cfg.client_id} --mqtt-addr ${cfg.mqtt_address} --mqtt-port ${toString cfg.mqtt_port}";
+                    serviceConfig = {
+                        ExecStart = "${defaultPackage}/bin/btleplug --client_id ${cfg.client_id} --mqtt-addr ${cfg.mqtt_address} --mqtt-port ${toString cfg.mqtt_port}";
                         ProtectHome = "read-only";
                         Restart = "on-failure";
                         Type = "exec";
