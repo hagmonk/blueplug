@@ -37,6 +37,12 @@
              options.services.blueplug = {
                  enable = mkEnableOption "BTLE Plug";
 
+                systemd = mkOption {
+                    type = types.bool;
+                    default = pkgs.stdenv.isLinux;
+                    description = "enable systemd";
+                };
+
                  client_id = mkOption {
                      type = types.str;
                      default = "";
@@ -55,15 +61,12 @@
                      description = "MQTT Port";
                  };
              };
-            config = let
-                pkg = cfg.package;
-            in
-             mkIf cfg.enable {
-                 systemd.services.btleplug = {
+            config = mkIf cfg.enable {
+                 systemd.services.btleplug = mkIf cfg.systemd {
                      description = "BTLE Plug";
                      wantedBy = ["multi-user.target"];
                      serviceConfig = {
-                         ExecStart = "${pkg}/bin/btleplug --client_id ${cfg.client_id} --mqtt-addr ${cfg.mqtt_address} --mqtt-port ${toString cfg.mqtt_port}";
+                         ExecStart = "${self.defaultPackage.blueplug.x86_64-linux}/bin/btleplug --client_id ${cfg.client_id} --mqtt-addr ${cfg.mqtt_address} --mqtt-port ${toString cfg.mqtt_port}";
                          ProtectHome = "read-only";
                          Restart = "on-failure";
                          Type = "exec";
