@@ -14,6 +14,8 @@
 
         naersk' = pkgs.callPackage naersk {};
 
+        isLinux = pkgs.lib.system.isLinux system;
+
       in rec {
         # For `nix build` & `nix run`:
         defaultPackage = naersk'.buildPackage {
@@ -27,7 +29,7 @@
           nativeBuildInputs = with pkgs; [ rustc cargo ];
         };
 
-        nixosModule = { config, lib, pkgs, ... }:
+        nixosModule = if isLinux then { config, lib, pkgs, ... }:
         with lib;
         let cfg = config.services.blueplug;
         in {
@@ -65,6 +67,8 @@
                     };
                 };
             };
-        };
+
+        }
+        else null;
       });
 }
