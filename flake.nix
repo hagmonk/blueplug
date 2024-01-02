@@ -33,7 +33,6 @@
          nixosModule = { config, lib, pkgs, ... }:
          with lib;
          let cfg = config.services.blueplug;
-
          in rec {
              options.services.blueplug = {
                  enable = mkEnableOption "BTLE Plug";
@@ -56,13 +55,15 @@
                      description = "MQTT Port";
                  };
              };
-
-             config = mkIf cfg.enable {
+            config = let
+                pkg = cfg.package;
+            in
+             mkIf cfg.enable {
                  systemd.services.btleplug = {
                      description = "BTLE Plug";
                      wantedBy = ["multi-user.target"];
                      serviceConfig = {
-                         ExecStart = "${pkgs.blueplug}/bin/btleplug --client_id ${cfg.client_id} --mqtt-addr ${cfg.mqtt_address} --mqtt-port ${toString cfg.mqtt_port}";
+                         ExecStart = "${pkg}/bin/btleplug --client_id ${cfg.client_id} --mqtt-addr ${cfg.mqtt_address} --mqtt-port ${toString cfg.mqtt_port}";
                          ProtectHome = "read-only";
                          Restart = "on-failure";
                          Type = "exec";
