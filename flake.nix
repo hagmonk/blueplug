@@ -13,7 +13,7 @@
         let cfg = config.services.blueplug;
         pkgs = nixpkgs.legacyPackages.${system};
 
-        in {
+        in rec {
             options.services.blueplug = {
                 enable = mkEnableOption "BTLE Plug";
 
