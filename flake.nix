@@ -5,7 +5,7 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
   };
 
-  outputs = { self, pkgs, flake-utils, naersk, nixpkgs }:
+  outputs = { self, flake-utils, naersk, nixpkgs }:
 
     flake-utils.lib.eachDefaultSystem (system:
       let
