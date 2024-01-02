@@ -66,7 +66,7 @@
                      description = "BTLE Plug";
                      wantedBy = ["multi-user.target"];
                      serviceConfig = {
-                         ExecStart = "${self.defaultPackage.blueplug.x86_64-linux}/bin/btleplug --client_id ${cfg.client_id} --mqtt-addr ${cfg.mqtt_address} --mqtt-port ${toString cfg.mqtt_port}";
+                         ExecStart = "${self.defaultPackage.x86_64-linux}/bin/btleplug --client_id ${cfg.client_id} --mqtt-addr ${cfg.mqtt_address} --mqtt-port ${toString cfg.mqtt_port}";
                          ProtectHome = "read-only";
                          Restart = "on-failure";
                          Type = "exec";
